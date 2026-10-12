@@ -151,6 +151,12 @@ li.dragging { position: relative; z-index: 1; }
 .backup .row2 { display: flex; gap: 8px; flex-wrap: wrap; }
 .backup label.btn { display: inline-block; }
 .backup input[type="file"] { display: none; }
+.sync { display: grid; gap: 8px; padding-bottom: 12px; margin-bottom: 4px; border-bottom: 1px solid var(--line); }
+.sync b { font-size: .9rem; }
+.sync-off { display: grid; gap: 8px; }
+.sync-off[hidden] { display: none; }
+.sync input { font-size: 16px !important; padding: 8px 10px !important; }
+.sync a { color: var(--ink); font-size: .85rem; align-self: center; }
 </style>
 
 </head>
@@ -169,7 +175,25 @@ li.dragging { position: relative; z-index: 1; }
     <p class="brand">Noter</p>
     <nav class="nav" id="nav"></nav>
     <div class="backup">
-      <p>Your lists are saved on this device only. Back up now and then so you don't lose them.</p>
+      <div class="sync">
+        <b>Cloud saving</b>
+        <div id="syncOff" class="sync-off">
+          <p>Save your lists to a private file on your GitHub account, so they sync between devices and can't be lost.</p>
+          <input type="password" id="syncKey" placeholder="Paste your GitHub key" autocomplete="off" aria-label="GitHub key">
+          <div class="row2">
+            <button class="btn small primary" type="button" id="syncConnect">Connect</button>
+            <a href="https://github.com/settings/tokens/new?scopes=gist&amp;description=Noter" target="_blank" rel="noopener">Make a key</a>
+          </div>
+        </div>
+        <div id="syncOn" hidden>
+          <p id="syncStatus" role="status"></p>
+          <div class="row2">
+            <button class="btn small" type="button" id="syncNow">Sync now</button>
+            <button class="btn small" type="button" id="syncDisconnect">Disconnect</button>
+          </div>
+        </div>
+      </div>
+      <p>Back up saves a copy of your lists as a file.</p>
       <div class="row2">
         <button class="btn small" type="button" id="backupBtn">Back up</button>
         <label class="btn small" for="restoreFile">Restore</label>
@@ -194,7 +218,12 @@ li.dragging { position: relative; z-index: 1; }
     try { data = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
     if (!data || !data.lists) data = seed;
     const subs = { lists: [], items: [] };
-    const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { setNotice("Couldn't save on this device. Storage may be full or turned off."); } };
+    let onChange = () => {};
+    const persist = (stamp = true) => {
+      if (stamp) data.updatedAt = Date.now();
+      try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { setNotice("Couldn't save on this device. Storage may be full or turned off."); }
+      if (stamp) onChange();
+    };
     const emit = c => { const docs = Object.entries(data[c] || {}).map(([id, d]) => ({ id, data: () => d })); subs[c].forEach(f => f({ docs })); };
     const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
     const coll = c => ({
@@ -210,11 +239,14 @@ li.dragging { position: relative; z-index: 1; }
       },
       async add(v) { const r = this.doc(); await r.set(v); return r; },
     });
-    persist();
+    persist(false);
     return {
       collection: coll,
-      dump: () => JSON.stringify({ app: "Noter", savedAt: new Date().toISOString(), ...data }, null, 2),
+      dump: () => JSON.stringify({ app: "Noter", savedAt: new Date().toISOString(), ...data }),
       load: obj => { data = { lists: obj.lists || {}, items: obj.items || {} }; persist(); emit("lists"); emit("items"); },
+      applyRemote: obj => { data = { lists: obj.lists || {}, items: obj.items || {}, updatedAt: obj.updatedAt || 0 }; persist(false); emit("lists"); emit("items"); },
+      updatedAt: () => data.updatedAt || 0,
+      onChange: fn => { onChange = fn; },
     };
   }
   const SEED = {"lists": {"main": {"name": "My steps", "order": 1, "color": "green", "createdAt": 0}}, "items": {}};
@@ -606,6 +638,86 @@ li.dragging { position: relative; z-index: 1; }
       setTimeout(() => URL.revokeObjectURL(a.href), 4000);
       $("backupMsg").textContent = "Backup file saved. On iPhone, choose where to keep it.";
     };
+    // Cloud saving: a private gist named "Noter data" on the person's GitHub account.
+    const sync = (() => {
+      let cfg = {};
+      try { cfg = JSON.parse(localStorage.getItem("noter-sync")) || {}; } catch (e) {}
+      const saveCfg = () => { try { localStorage.setItem("noter-sync", JSON.stringify(cfg)); } catch (e) {} };
+      let timer = null, busy = false;
+      const status = msg => { $("syncStatus").textContent = msg; };
+      const ui = () => { $("syncOff").hidden = !!cfg.token; $("syncOn").hidden = !cfg.token; };
+      async function gh(path, opts = {}) {
+        const headers = { Authorization: "Bearer " + cfg.token, Accept: "application/vnd.github+json" };
+        if (opts.body) headers["Content-Type"] = "application/json";
+        const r = await fetch("https://api.github.com" + path, { ...opts, headers, cache: "no-store" });
+        if (!r.ok) { const err = new Error("GitHub " + r.status); err.status = r.status; throw err; }
+        return r.status === 204 ? null : r.json();
+      }
+      async function findGist() {
+        if (cfg.gistId) {
+          try { return await gh("/gists/" + cfg.gistId); }
+          catch (e) { if (e.status !== 404) throw e; cfg.gistId = null; saveCfg(); }
+        }
+        for (let page = 1; page <= 10; page++) {
+          const list = await gh(`/gists?per_page=100&page=${page}`);
+          const g = list.find(x => x.description === "Noter data" && x.files && x.files["noter.json"]);
+          if (g) { cfg.gistId = g.id; saveCfg(); return gh("/gists/" + g.id); }
+          if (list.length < 100) break;
+        }
+        return null;
+      }
+      async function readGist(g) {
+        const f = g.files["noter.json"];
+        const text = f.truncated ? await (await fetch(f.raw_url, { cache: "no-store" })).text() : f.content;
+        return JSON.parse(text);
+      }
+      async function push() {
+        const content = db.dump();
+        if (cfg.gistId) await gh("/gists/" + cfg.gistId, { method: "PATCH", body: JSON.stringify({ files: { "noter.json": { content } } }) });
+        else { const g = await gh("/gists", { method: "POST", body: JSON.stringify({ description: "Noter data", public: false, files: { "noter.json": { content } } }) }); cfg.gistId = g.id; saveCfg(); }
+      }
+      const ok = () => status("Saved to GitHub at " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) + ".");
+      const fail = e => status(e.status === 401 || e.status === 403
+        ? "GitHub didn't accept your key. Tap Disconnect and paste a new one."
+        : "Couldn't reach GitHub. Your changes are safe on this device and will sync next time.");
+      async function syncNow() {
+        if (!cfg.token || busy) return;
+        busy = true; status("Syncing…");
+        try {
+          const g = await findGist();
+          if (!g) await push();
+          else {
+            const remote = await readGist(g);
+            const r = remote.updatedAt || 0, l = db.updatedAt();
+            if (r > l) db.applyRemote(remote); else if (r < l) await push();
+          }
+          ok();
+        } catch (e) { fail(e); }
+        finally { busy = false; }
+      }
+      function schedule() {
+        if (!cfg.token) return;
+        clearTimeout(timer); status("Saving…");
+        timer = setTimeout(async () => {
+          if (busy) { schedule(); return; }
+          busy = true;
+          try { await push(); ok(); } catch (e) { fail(e); } finally { busy = false; }
+        }, 1200);
+      }
+      $("syncConnect").onclick = async () => {
+        const k = $("syncKey").value.trim();
+        if (!k) { $("syncKey").focus(); return; }
+        cfg = { token: k }; saveCfg(); $("syncKey").value = ""; ui();
+        await syncNow();
+      };
+      $("syncNow").onclick = syncNow;
+      $("syncDisconnect").onclick = () => { cfg = {}; saveCfg(); ui(); };
+      document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") syncNow(); });
+      ui();
+      return { schedule, syncNow };
+    })();
+    db.onChange(sync.schedule);
+    sync.syncNow();
     $("restoreFile").onchange = async e => {
       const f = e.target.files[0]; if (!f) return;
       try {
