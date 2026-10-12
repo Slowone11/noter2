@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Noter">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f6f7f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e110f" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAADw0lEQVR4nO3dTY7bRhSF0WcjU2eT9ha8iXgLWWVWkAEBQXDrtkWJZP2dM2tAA0LvU6lUEthfvv3zveCRr60vgH6Jg0gcROIgEgeROIjEQSQOInEQiYNIHETiIBIHkTiIxEEkDiJxEImDSBxE4iASB5E4iMRBJA4icRCJg0gcROIgEgeROIjEQSQOInEQiYNIHETiIBIHkTiIxEEkDiJxEImDSBxE4iASB5E4iMRBJA4icRCJg0gcROIg+qv1BVBV9d/Pf+///PvXj1ZXcu+L/w7Z1m9Z3GueiDia+SSLew0Tsedo48kydj3ycOIgEkcDexeDVouHOK7W8G1iL3Fc6uUymiQljusMtGZsxEEkjosMt2yUOK4xYhkljgscUkaTc1JxnGvQNWMjjhMdVUarr1fEcZah14yNOE5xYBkNv5X1Y5/jjf5ucmPl6FTzMkochxv3g+tH4jjSBJvQe+I4zDRbjRtxHGO+Mkoch5iyjBLH+2Yto8TxponLKHH0oM8yShzvmOlI4yFxvGj6Mkocr5nssCsRx25zb0LviWOfdcooceyyVBnV4e85+ryNSa1XRnV1f46eb2OyYBnVycrxx6d+e8BYz+xHw11/+z1H/7cxWeFI46H2cXRukSONhxrH0fltTNbcatyMt3Jc1sfiZVTbOHq+k4kyasSVY3NqH8rYjBpHndaHMm4GjqNO6EMZ98aOo7r8qDlHGdU2jqOexKP6WPawKxl+5di8P9cOV6DmGsdx4Ovsnenaajw0ycqxeW3Gykjax3Hsc9rqPH6+MmqU33Ps9eSolPG59ivHzcX7D2X8UUdxVDf70+dNXEb1Fkdd1YcjjWd0F0ed34cyntRjHHVmHw67ntdpHHVOHzahu3T0UfahDl/oi5RRPa8cm94m0dv1nKr3OKqnefRzJdcYII7qYyo9XMPFxoijWs9mwTJqoDiq3YTWLKPGiqMWnlMTg8VRl/exco7jxVEXDmzlMmrQOOqSsS1eRo0bR508PGXU0HHUaSNUxmbsOOqEQSrjZvg46tBxKuPeDHHUQUNVxm8miaOM9gTzxFHv9aGtj6aKo16dsTIemi2O2j9pZSQTxlF75q2MT/T+G9I39XzL7P5NHsem25vtd26JOHjNnHsODiEOInEQiYNIHETiIBIHkTiIxEEkDiJxEImDSBxE4iASB5E4iMRBJA4icRCJg0gcROIgEgeROIjEQSQOInEQiYNIHETiIBIHkTiIxEEkDiJxEImDSBxE4iASB5E4iMRBJA4icRCJg0gcROIgEgfR/ywHDSNiLZW4AAAAAElFTkSuQmCC">
+<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAADw0lEQVR4nO3dTY7bRhSF0WcjU2eT9ha8iXgLWWVWkAEBQXDrtkWJZP2dM2tAA0LvU6lUEthfvv3zveCRr60vgH6Jg0gcROIgEgeROIjEQSQOInEQiYNIHETiIBIHkTiIxEEkDiJxEImDSBxE4iASB5E4iMRBJA4icRCJg0gcROIgEgeROIjEQSQOInEQiYNIHETiIBIHkTiIxEEkDiJxEImDSBxE4iASB5E4iMRBJA4icRCJg0gcROIg+qv1BVBV9d/Pf+///PvXj1ZXcu+L/w7Z1m9Z3GueiDia+SSLew0Tsedo48kydj3ycOIgEkcDexeDVouHOK7W8G1iL3Fc6uUymiQljusMtGZsxEEkjosMt2yUOK4xYhkljgscUkaTc1JxnGvQNWMjjhMdVUarr1fEcZah14yNOE5xYBkNv5X1Y5/jjf5ucmPl6FTzMkochxv3g+tH4jjSBJvQe+I4zDRbjRtxHGO+Mkoch5iyjBLH+2Yto8TxponLKHH0oM8yShzvmOlI4yFxvGj6Mkocr5nssCsRx25zb0LviWOfdcooceyyVBnV4e85+ryNSa1XRnV1f46eb2OyYBnVycrxx6d+e8BYz+xHw11/+z1H/7cxWeFI46H2cXRukSONhxrH0fltTNbcatyMt3Jc1sfiZVTbOHq+k4kyasSVY3NqH8rYjBpHndaHMm4GjqNO6EMZ98aOo7r8qDlHGdU2jqOexKP6WPawKxl+5di8P9cOV6DmGsdx4Ovsnenaajw0ycqxeW3Gykjax3Hsc9rqPH6+MmqU33Ps9eSolPG59ivHzcX7D2X8UUdxVDf70+dNXEb1Fkdd1YcjjWd0F0ed34cyntRjHHVmHw67ntdpHHVOHzahu3T0UfahDl/oi5RRPa8cm94m0dv1nKr3OKqnefRzJdcYII7qYyo9XMPFxoijWs9mwTJqoDiq3YTWLKPGiqMWnlMTg8VRl/exco7jxVEXDmzlMmrQOOqSsS1eRo0bR508PGXU0HHUaSNUxmbsOOqEQSrjZvg46tBxKuPeDHHUQUNVxm8miaOM9gTzxFHv9aGtj6aKo16dsTIemi2O2j9pZSQTxlF75q2MT/T+G9I39XzL7P5NHsem25vtd26JOHjNnHsODiEOInEQiYNIHETiIBIHkTiIxEEkDiJxEImDSBxE4iASB5E4iMRBJA4icRCJg0gcROIgEgeROIjEQSQOInEQiYNIHETiIBIHkTiIxEEkDiJxEImDSBxE4iASB5E4iMRBJA4icRCJg0gcROIgEgfR/ywHDSNiLZW4AAAAAElFTkSuQmCC">
+<style>
+:root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; font-size: 14px; } img { max-width: 100%; } [hidden] { display: none !important; }
+</style>
+<title>Noter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: side menu of colour-dotted lists beside the main view; "All lists" shows colour cards, a list shows its steps. On phones the menu folds behind a button. */
+:root {
+  --bg: #f6f7f5; --surface: #ffffff; --ink: #141714; --muted: #66706a; --line: #dfe3de; --hover: #eef1ed;
+  --accent: #0d8a63; --accent-ink: #ffffff; --danger: #c0392b;
+  --c-green: #0d8a63; --c-blue: #2563c9; --c-amber: #c27c0e; --c-red: #d1453b; --c-violet: #7a4fd0; --c-pink: #c8407e;
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e110f; --surface: #171b18; --ink: #ecefeb; --muted: #9aa59c; --line: #2c322d; --hover: #1f2420;
+  --accent: #3fd39d; --accent-ink: #06130d; --danger: #ff7d6e;
+  --c-green: #3fd39d; --c-blue: #6da3ff; --c-amber: #f2b84b; --c-red: #ff7b6e; --c-violet: #b394ff; --c-pink: #ff86bd; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e110f; --surface: #171b18; --ink: #ecefeb; --muted: #9aa59c; --line: #2c322d; --hover: #1f2420;
+  --accent: #3fd39d; --accent-ink: #06130d; --danger: #ff7d6e;
+  --c-green: #3fd39d; --c-blue: #6da3ff; --c-amber: #f2b84b; --c-red: #ff7b6e; --c-violet: #b394ff; --c-pink: #ff86bd; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 17px; line-height: 1.5; }
+.app { max-width: 1000px; margin: 0 auto; padding-inline: 16px; padding-block: 24px 80px; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 32px; align-items: start; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[data-c] { --lc: var(--c-green); }
+[data-c="blue"] { --lc: var(--c-blue); } [data-c="amber"] { --lc: var(--c-amber); } [data-c="red"] { --lc: var(--c-red); }
+[data-c="violet"] { --lc: var(--c-violet); } [data-c="pink"] { --lc: var(--c-pink); }
+
+/* Side menu */
+.side { position: sticky; top: calc(24px + env(safe-area-inset-top, 0px)); display: grid; gap: 4px; }
+.brand { font-weight: 700; font-size: 1.6rem; letter-spacing: -0.03em; margin: 0 0 12px 10px; }
+.nav { display: grid; gap: 2px; }
+.nav button { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; font: 500 .95rem var(--sans); color: var(--muted); background: none; border: 0; border-radius: 9px; padding: 8px 10px; cursor: pointer; }
+.nav button:hover { background: var(--hover); color: var(--ink); }
+.nav button[aria-current="page"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: inset 0 0 0 1px var(--line); }
+.nav .label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav .count { font-size: .8rem; font-variant-numeric: tabular-nums; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--lc); flex: none; }
+.nav .add { color: var(--accent); font-weight: 600; margin-top: 6px; }
+.icon-all { width: 10px; height: 10px; flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5px; }
+.icon-all i { background: currentColor; border-radius: 1px; }
+
+.topbar { display: none; }
+.scrim { display: none; }
+
+/* Main */
+main { display: grid; gap: 18px; min-width: 0; }
+h1 { font-weight: 700; font-size: 1.9rem; letter-spacing: -0.03em; margin: 0; overflow-wrap: anywhere; }
+.sub { margin: 0; color: var(--muted); font-size: .95rem; }
+.bar { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.bar > i { display: block; height: 100%; width: 0; background: var(--lc, var(--accent)); border-radius: 99px; }
+@media (prefers-reduced-motion: no-preference) { .bar > i { transition: width .35s ease; } }
+
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.card { display: grid; gap: 6px; text-align: left; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-top: 5px solid var(--lc); border-radius: 12px; padding: 14px 16px 16px; cursor: pointer; min-width: 0; }
+.card:hover { box-shadow: 0 4px 14px rgb(0 0 0 / .07); }
+.card b { font-weight: 600; font-size: 1.05rem; overflow-wrap: anywhere; }
+.card small { color: var(--muted); font-size: .88rem; font-variant-numeric: tabular-nums; }
+.card .bar { margin-top: 4px; }
+.card.new { border: 1.5px dashed var(--line); color: var(--accent); font-weight: 600; place-content: center; text-align: center; min-height: 96px; }
+
+.head { display: flex; gap: 14px; align-items: stretch; }
+.head .stripe { width: 6px; border-radius: 6px; background: var(--lc); flex: none; }
+.head .txt { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.head .tools { display: flex; align-items: flex-start; }
+.link { background: none; border: 0; padding: 6px 0; font: 600 .9rem var(--sans); color: var(--accent); cursor: pointer; white-space: nowrap; }
+
+input:not([type="checkbox"]):not([type="radio"]) { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%; box-sizing: border-box; min-width: 0; }
+input::placeholder { color: var(--muted); }
+form.add { display: flex; gap: 8px; }
+.btn { font: 600 .95rem var(--sans); border-radius: 10px; padding: 10px 16px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); white-space: nowrap; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.danger { color: var(--danger); border-color: var(--danger); background: transparent; }
+.btn.small { padding: 6px 12px; font-size: .88rem; }
+.btn:disabled { opacity: .5; cursor: default; }
+.hint { color: var(--muted); font-size: .9rem; margin: 0; }
+.panel { display: grid; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.panel p { margin: 0; font-size: .95rem; }
+.panel .btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.swatches { border: 0; padding: 0; margin: 0; min-width: 0; }
+.swatches legend { font-size: .88rem; color: var(--muted); padding: 0; margin-bottom: 6px; }
+.swatch-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.swatch { position: relative; width: 30px; height: 30px; }
+.swatch input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.swatch span { display: block; width: 30px; height: 30px; border-radius: 50%; background: var(--lc); box-sizing: border-box; pointer-events: none; }
+.swatch input:checked + span { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--lc); }
+.swatch input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 4px; }
+
+/* Steps */
+ol.steps, ol.steps ol { list-style: none; margin: 0; padding: 0; }
+ol.steps ol { margin-left: 44px; padding-left: 12px; border-left: 2px solid var(--line); }
+ol.steps { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 6px; }
+li.dragging > .row { background: var(--hover); box-shadow: 0 6px 18px rgb(0 0 0 / .14); }
+li.dragging { position: relative; z-index: 1; }
+.row { display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 2px; border-radius: 10px; }
+.row.open { background: var(--hover); }
+.grip { flex: none; width: 22px; height: 30px; display: grid; place-items: center; border: 0; background: none; color: var(--muted); cursor: grab; padding: 0; border-radius: 6px; touch-action: none; }
+.grip:active { cursor: grabbing; }
+.grip svg { width: 10px; height: 16px; }
+.check { position: relative; flex: none; width: 24px; height: 24px; cursor: pointer; }
+.check input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.check span { box-sizing: border-box; width: 24px; height: 24px; border: 2px solid var(--muted); border-radius: 6px; background: var(--surface); display: grid; place-items: center; color: var(--surface); pointer-events: none; }
+.check svg { width: 14px; height: 14px; visibility: hidden; }
+.check input:checked + span { background: var(--lc); border-color: var(--lc); }
+.check input:checked + span svg { visibility: visible; }
+.check input:focus-visible + span { outline: 2px solid var(--lc); outline-offset: 2px; }
+.name { flex: 1; min-width: 0; text-align: left; background: none; border: 0; padding: 2px 0; font: inherit; color: var(--ink); cursor: pointer; overflow-wrap: anywhere; display: flex; gap: 8px; }
+.name .n { color: var(--muted); font-variant-numeric: tabular-nums; flex: none; }
+.done > .row .name .t { color: var(--muted); text-decoration: line-through; }
+.options { display: grid; gap: 10px; padding: 4px 10px 12px 66px; }
+.options .btns, .options form { display: flex; gap: 8px; flex-wrap: wrap; }
+.options p { margin: 0; font-size: .95rem; }
+.options form input { flex: 1 1 200px; }
+.panel form { display: grid; gap: 14px; }
+
+.empty { color: var(--muted); text-align: center; padding: 24px 12px; }
+.notice { color: var(--danger); font-size: .9rem; margin: 0; }
+
+@media (max-width: 760px) {
+  .app { grid-template-columns: minmax(0, 1fr); gap: 18px; padding-block: 12px 80px; }
+  .topbar { display: flex; align-items: center; gap: 12px; }
+  .topbar .brand { margin: 0; font-size: 1.35rem; }
+  .menu-btn { display: flex; align-items: center; gap: 8px; font: 600 .95rem var(--sans); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; cursor: pointer; }
+  .menu-btn svg { width: 16px; height: 16px; }
+  .side { position: fixed; z-index: 20; top: 0; bottom: 0; left: 0; width: min(280px, 82vw); box-sizing: border-box; background: var(--bg); border-right: 1px solid var(--line); padding: calc(20px + env(safe-area-inset-top, 0px)) 12px 20px; overflow-y: auto; transform: translateX(-105%); visibility: hidden; align-content: start; }
+  .side.open { transform: none; visibility: visible; }
+  .scrim.open { display: block; position: fixed; inset: 0; z-index: 10; background: rgb(0 0 0 / .35); }
+  .cards { grid-template-columns: minmax(0, 1fr); }
+  .options { padding-left: 12px; }
+  ol.steps ol { margin-left: 30px; }
+}
+@media (min-width: 761px) { .menu-btn { display: none; } }
+@media (max-width: 760px) and (prefers-reduced-motion: no-preference) { .side { transition: transform .2s ease, visibility .2s; } }
+
+.backup { margin-top: 18px; padding: 12px 10px 0; border-top: 1px solid var(--line); display: grid; gap: 6px; }
+.backup p { margin: 0; font-size: .8rem; color: var(--muted); }
+.backup .row2 { display: flex; gap: 8px; flex-wrap: wrap; }
+.backup label.btn { display: inline-block; }
+.backup input[type="file"] { display: none; }
+</style>
+
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <button class="menu-btn" type="button" id="menuBtn" aria-expanded="false" aria-controls="side">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      Lists
+    </button>
+    <p class="brand">Noter</p>
+  </div>
+  <div class="scrim" id="scrim"></div>
+
+  <aside class="side" id="side" aria-label="Lists">
+    <p class="brand">Noter</p>
+    <nav class="nav" id="nav"></nav>
+    <div class="backup">
+      <p>Your lists are saved on this device only. Back up now and then so you don't lose them.</p>
+      <div class="row2">
+        <button class="btn small" type="button" id="backupBtn">Back up</button>
+        <label class="btn small" for="restoreFile">Restore</label>
+        <input type="file" id="restoreFile" accept="application/json,.json">
+      </div>
+      <p id="backupMsg" role="status"></p>
+    </div>
+  </aside>
+
+  <main id="main">
+    <p class="notice" id="notice" hidden></p>
+    <div id="view"></div>
+  </main>
+</div>
+
+<script>
+(() => {
+  // On-device store with the same calls the page already uses (collection, doc, onSnapshot…).
+  function localDb(seed) {
+    const KEY = "noter-data-v1";
+    let data;
+    try { data = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+    if (!data || !data.lists) data = seed;
+    const subs = { lists: [], items: [] };
+    const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { setNotice("Couldn't save on this device. Storage may be full or turned off."); } };
+    const emit = c => { const docs = Object.entries(data[c] || {}).map(([id, d]) => ({ id, data: () => d })); subs[c].forEach(f => f({ docs })); };
+    const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    const coll = c => ({
+      onSnapshot(fn) { subs[c].push(fn); setTimeout(() => fn({ docs: Object.entries(data[c] || {}).map(([id, d]) => ({ id, data: () => d })) }), 0); return () => {}; },
+      doc(id) {
+        id = id || newId();
+        return {
+          id,
+          async set(v) { data[c][id] = { ...v }; persist(); emit(c); },
+          async update(p) { if (!data[c][id]) throw { code: "not_found" }; data[c][id] = { ...data[c][id], ...p }; persist(); emit(c); },
+          async delete() { delete data[c][id]; persist(); emit(c); },
+        };
+      },
+      async add(v) { const r = this.doc(); await r.set(v); return r; },
+    });
+    persist();
+    return {
+      collection: coll,
+      dump: () => JSON.stringify({ app: "Noter", savedAt: new Date().toISOString(), ...data }, null, 2),
+      load: obj => { data = { lists: obj.lists || {}, items: obj.items || {} }; persist(); emit("lists"); emit("items"); },
+    };
+  }
+  const SEED = {"lists": {"main": {"name": "My steps", "order": 1, "color": "green", "createdAt": 0}}, "items": {}};
+  const $ = id => document.getElementById(id);
+  const COLOURS = [["green", "Green"], ["blue", "Blue"], ["amber", "Amber"], ["red", "Red"], ["violet", "Violet"], ["pink", "Pink"]];
+  const colourOf = l => COLOURS.some(c => c[0] === (l && l.color)) ? l.color : "green";
+
+  let items = [];          // [{id, listId, title, done, parentId, order, createdAt, doneAt}]
+  let lists = [];          // [{id, name, color, order, createdAt}]
+  let col = null, listCol = null;
+  let gotItems = false, gotLists = false, madeDefault = false;
+  let view = "all";        // "all" or a list id
+  try { view = localStorage.getItem("noter-view") || "all"; } catch (e) {}
+  let openId = null;       // step whose options are showing
+  let mode = "menu";       // "menu" | "add" | "rename" | "delete"
+  let panel = null;        // null | "new" | "edit" | "delete"
+  let newColour = "blue";
+  let drag = null;
+
+  const ord = it => typeof it.order === "number" ? it.order : (it.createdAt || 0);
+  const sorted = arr => arr.slice().sort((a, b) => ord(a) - ord(b));
+  const current = () => lists.find(l => l.id === view) || null;
+  // Steps from before lists existed (or whose list is gone) belong to the first list.
+  const listOf = i => lists.some(l => l.id === i.listId) ? i.listId : (sorted(lists)[0] || {}).id;
+  const inList = lid => items.filter(i => listOf(i) === lid);
+  // A step whose parent is gone shows at the top level instead of vanishing.
+  const isTop = i => !i.parentId || !items.some(p => p.id === i.parentId);
+  const kids = pid => sorted(items.filter(i => pid === null ? isTop(i) && listOf(i) === view : i.parentId === pid));
+  const below = id => kids(id).flatMap(k => [k, ...below(k.id)]);
+  const loaded = () => gotItems && gotLists;
+  const stats = lid => { const m = inList(lid); const d = m.filter(i => i.done).length; return { total: m.length, done: d, pct: m.length ? d / m.length * 100 : 0 }; };
+
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const btn = (label, cls, fn, type) => { const b = el("button", "btn small " + (cls || ""), label); b.type = type || "button"; if (fn) b.onclick = fn; return b; };
+  const bar = pct => { const b = el("div", "bar"); const i = el("i"); i.style.width = pct + "%"; b.append(i); return b; };
+  const setNotice = msg => { $("notice").textContent = msg || ""; $("notice").hidden = !msg; };
+  const go = v => { view = v; openId = null; panel = null; try { localStorage.setItem("noter-view", v); } catch (e) {} setMenu(false); render(); window.scrollTo(0, 0); };
+  const show = (id, m) => { openId = id; mode = m || "menu"; render(); };
+  const showPanel = p => { panel = p; render(); };
+
+  function setMenu(open) {
+    $("side").classList.toggle("open", open);
+    $("scrim").classList.toggle("open", open);
+    $("menuBtn").setAttribute("aria-expanded", String(open));
+  }
+  $("menuBtn").onclick = () => setMenu(!$("side").classList.contains("open"));
+  $("scrim").onclick = () => setMenu(false);
+  document.addEventListener("keydown", e => { if (e.key === "Escape") setMenu(false); });
+
+  function render() {
+    if (drag) return;
+    if (view !== "all" && gotLists && !current()) view = "all";
+    const typing = document.activeElement && document.activeElement.closest("#view form:not(.add)") ? document.activeElement : null;
+    const keep = typing ? { id: typing.id, value: typing.value } : null;
+    renderNav();
+    const v = $("view");
+    v.replaceChildren();
+    delete v.dataset.c;
+    if (view === "all") renderHome(v); else renderList(v, current());
+    const f = document.querySelector("[data-autofocus]");
+    if (f) { if (keep && f.id === keep.id) f.value = keep.value; f.focus(); }
+  }
+
+  function navBtn(content, active, fn, cls) {
+    const b = el("button", cls || ""); b.type = "button"; b.append(...content);
+    if (active) b.setAttribute("aria-current", "page");
+    b.onclick = fn; return b;
+  }
+
+  function renderNav() {
+    const nav = $("nav");
+    nav.replaceChildren();
+    const grid = el("span", "icon-all"); for (let i = 0; i < 4; i++) grid.append(el("i"));
+    nav.append(navBtn([grid, el("span", "label", "All lists")], view === "all", () => go("all")));
+    for (const l of sorted(lists)) {
+      const s = stats(l.id);
+      const b = navBtn([el("span", "dot"), el("span", "label", l.name), el("span", "count", s.total ? `${s.done}/${s.total}` : "")], view === l.id, () => go(l.id));
+      b.dataset.c = colourOf(l);
+      nav.append(b);
+    }
+    const add = navBtn([el("span", null, "+ New list")], false, () => { go("all"); showPanel("new"); }, "add");
+    add.disabled = !listCol;
+    nav.append(add);
+  }
+
+  function renderHome(v) {
+    v.style.display = "grid"; v.style.gap = "18px";
+    const head = el("div", "txt");
+    head.append(el("h1", null, "All lists"));
+    const all = items.length, done = items.filter(i => i.done).length;
+    head.append(el("p", "sub", loaded() ? `${lists.length} list${lists.length === 1 ? "" : "s"} · ${done} of ${all} steps done` : "Loading your lists…"));
+    v.append(head);
+    if (panel === "new") v.append(listForm(null));
+    const cards = el("div", "cards");
+    for (const l of sorted(lists)) {
+      const s = stats(l.id);
+      const c = el("button", "card"); c.type = "button"; c.dataset.c = colourOf(l);
+      c.append(el("b", null, l.name), el("small", null, !s.total ? "No steps yet" : s.done === s.total ? "All done" : `${s.done} of ${s.total}`), bar(s.pct));
+      c.onclick = () => go(l.id);
+      cards.append(c);
+    }
+    const n = el("button", "card new", "+ New list"); n.type = "button"; n.disabled = !listCol;
+    n.onclick = () => showPanel("new");
+    cards.append(n);
+    v.append(cards);
+  }
+
+  function listForm(l) {
+    const p = el("div", "panel");
+    const f = el("form"); f.autocomplete = "off";
+    const inp = el("input"); inp.id = l ? "list-rename" : "list-new"; inp.maxLength = 80; inp.setAttribute("data-autofocus", "");
+    inp.setAttribute("aria-label", "List name");
+    if (l) inp.value = l.name; else inp.placeholder = "Name your list, like School or Shopping";
+    let chosen = l ? colourOf(l) : newColour;
+    const fs = el("fieldset", "swatches"); fs.append(el("legend", null, "Colour"));
+    const row = el("div", "swatch-row");
+    for (const [key, label] of COLOURS) {
+      const s = el("label", "swatch"); s.dataset.c = key;
+      const r = el("input"); r.type = "radio"; r.name = "colour"; r.value = key; r.checked = key === chosen; r.setAttribute("aria-label", label);
+      r.onchange = () => { chosen = key; if (!l) newColour = key; };
+      s.append(r, el("span")); row.append(s);
+    }
+    fs.append(row);
+    const b = el("div", "btns");
+    b.append(btn(l ? "Save" : "Create list", "primary", null, "submit"), btn("Cancel", "", () => showPanel(null)));
+    if (l && lists.length > 1) b.append(btn("Delete list", "danger", () => showPanel("delete")));
+    f.append(inp, fs, b);
+    f.onsubmit = e => {
+      e.preventDefault();
+      const name = inp.value.trim(); if (!name) { inp.focus(); return; }
+      if (l) saveList(l.id, { name, color: chosen }); else createList(name, chosen, true);
+      showPanel(null);
+    };
+    inp.onkeydown = e => { if (e.key === "Escape") showPanel(null); };
+    p.append(f);
+    return p;
+  }
+
+  function renderList(v, l) {
+    v.style.display = "grid"; v.style.gap = "18px";
+    if (!l) { v.append(el("p", "empty", "Loading your list…")); return; }
+    v.dataset.c = colourOf(l);
+    const s = stats(l.id);
+    const head = el("div", "head");
+    const txt = el("div", "txt");
+    txt.append(el("h1", null, l.name), el("p", "sub", s.total ? `${s.done} of ${s.total} done` : "No steps yet"), bar(s.pct));
+    const tools = el("div", "tools");
+    const o = el("button", "link", "Edit list"); o.type = "button"; o.onclick = () => showPanel(panel === "edit" ? null : "edit");
+    tools.append(o);
+    head.append(el("span", "stripe"), txt, tools);
+    v.append(head);
+
+    if (panel === "edit") v.append(listForm(l));
+    if (panel === "delete") {
+      const p = el("div", "panel");
+      p.append(el("p", null, s.total ? `Delete “${l.name}” and its ${s.total} step${s.total > 1 ? "s" : ""}?` : `Delete “${l.name}”?`));
+      const b = el("div", "btns");
+      b.append(btn("Yes, delete", "danger", () => { removeList(l.id); }), btn("Keep it", "", () => showPanel("edit")));
+      p.append(b); v.append(p);
+    }
+
+    const f = el("form", "add"); f.autocomplete = "off";
+    const inp = el("input"); inp.id = "newTitle"; inp.maxLength = 200; inp.placeholder = "Add a step…"; inp.setAttribute("aria-label", "New step");
+    const addBtn = el("button", "btn primary", "Add"); addBtn.type = "submit"; addBtn.disabled = !col;
+    f.append(inp, addBtn);
+    f.onsubmit = e => { e.preventDefault(); const t = inp.value.trim(); if (!t) { inp.focus(); return; } inp.value = ""; create(t, null); };
+    v.append(f);
+    v.append(el("p", "hint", "Tick the box when a step is done. Drag the dots to reorder. Tap a step's name to add smaller steps under it, rename it or delete it."));
+
+    const ol = el("ol", "steps");
+    const top = kids(null);
+    if (!top.length) ol.append(el("li", "empty", loaded() ? "No steps in this list yet. Type one above and press Add." : "Loading your steps…"));
+    else top.forEach((it, i) => ol.append(step(it, i + 1)));
+    v.append(ol);
+  }
+
+  const gripSvg = '<svg viewBox="0 0 10 16" aria-hidden="true"><g fill="currentColor"><circle cx="2.5" cy="2.5" r="1.6"/><circle cx="7.5" cy="2.5" r="1.6"/><circle cx="2.5" cy="8" r="1.6"/><circle cx="7.5" cy="8" r="1.6"/><circle cx="2.5" cy="13.5" r="1.6"/><circle cx="7.5" cy="13.5" r="1.6"/></g></svg>';
+  const tickSvg = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  function step(it, n) {
+    const li = el("li", it.done ? "done" : "");
+    li.dataset.id = it.id;
+    const row = el("div", "row" + (openId === it.id ? " open" : ""));
+
+    const grip = el("button", "grip"); grip.type = "button"; grip.innerHTML = gripSvg;
+    grip.setAttribute("aria-label", `Reorder “${it.title}”. Drag, or use the up and down arrow keys.`);
+    grip.onpointerdown = e => startDrag(e, li);
+    grip.onkeydown = e => {
+      if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+      e.preventDefault();
+      const ol = li.parentElement, sib = e.key === "ArrowUp" ? li.previousElementSibling : li.nextElementSibling;
+      if (!sib || !sib.dataset.id) return;
+      e.key === "ArrowUp" ? ol.insertBefore(li, sib) : ol.insertBefore(sib, li);
+      saveOrder(ol);
+      const again = document.querySelector(`li[data-id="${it.id}"] > .row .grip`); if (again) again.focus();
+    };
+
+    const check = el("label", "check");
+    const box = el("input"); box.type = "checkbox"; box.checked = !!it.done; box.id = "done-" + it.id;
+    const mark = el("span"); mark.innerHTML = tickSvg;
+    check.append(box, mark);
+    box.setAttribute("aria-label", "Done: " + it.title);
+    box.onchange = () => save(it.id, { done: box.checked, doneAt: box.checked ? Date.now() : null });
+
+    const name = el("button", "name"); name.type = "button";
+    name.setAttribute("aria-expanded", String(openId === it.id));
+    name.append(el("span", "n", n + "."), el("span", "t", it.title));
+    name.onclick = () => openId === it.id ? show(null) : show(it.id);
+
+    row.append(grip, check, name);
+    li.append(row);
+    if (openId === it.id) li.append(options(it));
+
+    const children = kids(it.id);
+    if (children.length) {
+      const ol = el("ol");
+      children.forEach((k, i) => ol.append(step(k, i + 1)));
+      li.append(ol);
+    }
+    return li;
+  }
+
+  // Drag a step up or down among the steps at its own level.
+  function startDrag(e, li) {
+    if (e.button !== undefined && e.button !== 0) return;
+    e.preventDefault();
+    const ol = li.parentElement;
+    const before = [...ol.children].map(c => c.dataset.id).join();
+    drag = { li, ol };
+    li.classList.add("dragging");
+    const move = ev => {
+      const y = ev.clientY;
+      const sibs = [...ol.children].filter(c => c !== li && c.dataset.id);
+      const next = sibs.find(s => { const r = s.querySelector(":scope > .row").getBoundingClientRect(); return y < r.top + r.height / 2; });
+      if (next ? li.nextElementSibling !== next : ol.lastElementChild !== li) ol.insertBefore(li, next || null);
+      if (y < 40) window.scrollBy(0, -12); else if (y > window.innerHeight - 40) window.scrollBy(0, 12);
+    };
+    const end = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", end);
+      window.removeEventListener("pointercancel", end);
+      li.classList.remove("dragging");
+      drag = null;
+      if ([...ol.children].map(c => c.dataset.id).join() !== before) saveOrder(ol); else render();
+    };
+    // Listen on the window: moving the step in the page would drop events bound to the handle.
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", end);
+    window.addEventListener("pointercancel", end);
+  }
+
+  async function saveOrder(ol) {
+    const ids = [...ol.children].map(c => c.dataset.id).filter(Boolean);
+    const changes = [];
+    ids.forEach((id, i) => { const it = items.find(x => x.id === id); if (it && it.order !== i + 1) { it.order = i + 1; changes.push([id, i + 1]); } });
+    render();  // numbers update straight away
+    try { for (const [id, order] of changes) await col.doc(id).update({ order }); setNotice(""); }
+    catch (err) { setNotice("Couldn't save the new order. Try again."); }
+  }
+
+  function options(it) {
+    const box = el("div", "options");
+    if (mode === "add" || mode === "rename") {
+      const f = el("form"); f.autocomplete = "off";
+      const inp = el("input"); inp.maxLength = 200; inp.setAttribute("data-autofocus", "");
+      inp.id = mode + "-" + it.id;
+      if (mode === "rename") { inp.value = it.title; inp.setAttribute("aria-label", "New name"); }
+      else { inp.placeholder = "Smaller step under “" + it.title + "”"; inp.setAttribute("aria-label", "New smaller step"); }
+      f.append(inp, btn(mode === "add" ? "Add" : "Save", "primary", null, "submit"), btn(mode === "add" ? "Finished" : "Cancel", "", () => show(it.id)));
+      f.onsubmit = e => {
+        e.preventDefault();
+        const t = inp.value.trim(); if (!t) return;
+        if (mode === "rename") { save(it.id, { title: t }); show(null); }
+        else { create(t, it.id); inp.value = ""; }
+      };
+      inp.onkeydown = e => { if (e.key === "Escape") show(it.id); };
+      box.append(f);
+    } else if (mode === "delete") {
+      const n = below(it.id).length;
+      box.append(el("p", null, n ? `Delete this step and the ${n} smaller step${n > 1 ? "s" : ""} under it?` : "Delete this step?"));
+      const b = el("div", "btns");
+      b.append(btn("Yes, delete", "danger", () => { remove(it.id); show(null); }), btn("Keep it", "", () => show(it.id)));
+      box.append(b);
+    } else {
+      const b = el("div", "btns");
+      b.append(btn("Add a smaller step", "primary", () => show(it.id, "add")), btn("Rename", "", () => show(it.id, "rename")), btn("Delete", "danger", () => show(it.id, "delete")));
+      box.append(b);
+    }
+    return box;
+  }
+
+  async function create(title, parentId) {
+    const l = current(); if (!l || !col) return;
+    const sibs = kids(parentId);
+    const order = sibs.length ? Math.max(...sibs.map(ord)) + 1 : 1;
+    try { await col.add({ listId: l.id, title, detail: "", done: false, parentId, order, createdAt: Date.now(), doneAt: null }); setNotice(""); }
+    catch (e) { setNotice(e && e.code === "quota_exceeded" ? "You're out of room. Delete some finished steps to make space." : "That step didn't save. Check your connection and try again."); }
+    const again = $("newTitle"); if (again && !parentId) again.focus();
+  }
+  async function save(id, patch) {
+    try { await col.doc(id).update(patch); setNotice(""); }
+    catch (e) { setNotice("That change didn't save. Check your connection and try again."); }
+  }
+  async function remove(id) {
+    const ids = [...below(id).map(d => d.id).reverse(), id];
+    try { for (const x of ids) await col.doc(x).delete(); setNotice(""); }
+    catch (e) { setNotice("Couldn't delete everything. Try again."); }
+  }
+  async function createList(name, color, open) {
+    const order = lists.length ? Math.max(...lists.map(ord)) + 1 : 1;
+    try {
+      const ref = listCol.doc();
+      await ref.set({ name, color, order, createdAt: Date.now() });
+      if (open) go(ref.id);
+      setNotice("");
+    } catch (e) { setNotice("That list didn't save. Check your connection and try again."); }
+  }
+  async function saveList(id, patch) {
+    try { await listCol.doc(id).update(patch); setNotice(""); }
+    catch (e) { setNotice("That change didn't save. Check your connection and try again."); }
+  }
+  async function removeList(id) {
+    const steps = inList(id).map(i => i.id);
+    go("all");
+    try { for (const x of steps) await col.doc(x).delete(); await listCol.doc(id).delete(); setNotice(""); }
+    catch (e) { setNotice("Couldn't delete the whole list. Try again."); }
+  }
+
+  render();
+
+  (async () => {
+    const db = localDb(SEED);
+    $("backupBtn").onclick = () => {
+      const blob = new Blob([db.dump()], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "noter-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+      document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      $("backupMsg").textContent = "Backup file saved. On iPhone, choose where to keep it.";
+    };
+    $("restoreFile").onchange = async e => {
+      const f = e.target.files[0]; if (!f) return;
+      try {
+        const obj = JSON.parse(await f.text());
+        if (!obj.lists || !obj.items) throw new Error();
+        db.load(obj); go("all");
+        $("backupMsg").textContent = "Restored from " + f.name + ".";
+      } catch (err) { $("backupMsg").textContent = "That file isn't a Noter backup."; }
+      e.target.value = "";
+    };
+    if (!db) { gotItems = gotLists = true; setNotice(""); render(); return; }
+    col = db.collection("items");
+    listCol = db.collection("lists");
+    const fail = () => { gotItems = gotLists = true; setNotice("Couldn't load your lists. Reload the page to try again."); render(); };
+    listCol.onSnapshot(snap => {
+      lists = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      gotLists = true;
+      // Everyone starts with one list.
+      if (!lists.length && !madeDefault) { madeDefault = true; createList("My steps", "green", false); }
+      render();
+    }, fail);
+    col.onSnapshot(snap => {
+      items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (openId && !items.some(i => i.id === openId)) openId = null;
+      gotItems = true;
+      render();
+    }, fail);
+    render();
+  })();
+})();
+</script>
+
+</body>
+</html>
