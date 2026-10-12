@@ -219,40 +219,93 @@ li.dragging { position: relative; z-index: 1; }
 <script>
 (() => {
   // On-device store with the same calls the page already uses (collection, doc, onSnapshot…).
+  // Every list and step carries the time it last changed (_t), and deletions are remembered for a while,
+  // so two devices can be merged one item at a time instead of one copy overwriting the other.
   function localDb(seed) {
-    const KEY = "noter-data-v1";
+    const KEY = "noter-data-v1", COLLS = ["lists", "items"], KEEP_DELETED = 90 * 864e5;
     let data;
     try { data = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
-    if (!data || !data.lists) data = seed;
+    if (!data || !data.lists) data = JSON.parse(JSON.stringify(seed));
+    data.items = data.items || {}; data.deleted = data.deleted || {};
     const subs = { lists: [], items: [] };
-    let onChange = () => {};
-    const persist = (stamp = true) => {
-      if (stamp) data.updatedAt = Date.now();
+    let onChange = () => {}, dirty = new Set(), stamped = false, flushing = false;
+    const snap = c => ({ docs: Object.entries(data[c]).map(([id, d]) => ({ id, data: () => d })) });
+    const write = () => {
       try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { setNotice("Couldn't save on this device. Storage may be full or turned off."); }
-      if (stamp) onChange();
     };
-    const emit = c => { const docs = Object.entries(data[c] || {}).map(([id, d]) => ({ id, data: () => d })); subs[c].forEach(f => f({ docs })); };
+    // Changes made together (a list and all its steps) are saved and shown once.
+    const flush = () => {
+      flushing = false;
+      if (stamped) data.updatedAt = Date.now();
+      write();
+      const cs = [...dirty]; dirty = new Set();
+      cs.forEach(c => subs[c].forEach(f => f(snap(c))));
+      if (stamped) { stamped = false; onChange(); }
+    };
+    const changed = (c, stamp = true) => {
+      dirty.add(c); stamped = stamped || stamp;
+      if (!flushing) { flushing = true; queueMicrotask(flush); }
+    };
     const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
     const coll = c => ({
-      onSnapshot(fn) { subs[c].push(fn); setTimeout(() => fn({ docs: Object.entries(data[c] || {}).map(([id, d]) => ({ id, data: () => d })) }), 0); return () => {}; },
+      onSnapshot(fn) { subs[c].push(fn); setTimeout(() => fn(snap(c)), 0); return () => {}; },
       doc(id) {
         id = id || newId();
         return {
           id,
-          async set(v) { data[c][id] = { ...v }; persist(); emit(c); },
-          async update(p) { if (!data[c][id]) throw { code: "not_found" }; data[c][id] = { ...data[c][id], ...p }; persist(); emit(c); },
-          async delete() { delete data[c][id]; persist(); emit(c); },
+          async set(v) { data[c][id] = { ...v, _t: Date.now() }; delete data.deleted[c + "/" + id]; changed(c); },
+          async update(p) { if (!data[c][id]) throw { code: "not_found" }; data[c][id] = { ...data[c][id], ...p, _t: Date.now() }; changed(c); },
+          async delete() { if (data[c][id]) { delete data[c][id]; data.deleted[c + "/" + id] = Date.now(); changed(c); } },
         };
       },
       async add(v) { const r = this.doc(); await r.set(v); return r; },
     });
-    persist(false);
+    // Fold another copy (the cloud's) into this one. Newer edits win per item; a deletion beats older edits.
+    // Returns whether this device had anything the other copy is missing, so it knows to upload.
+    function merge(other) {
+      const od = other.deleted || {}, now = Date.now();
+      const otherNewer = (other.updatedAt || 0) > (data.updatedAt || 0);  // tie-break for items saved before _t existed
+      let theyNeed = false, weChanged = false;
+      for (const [k, t] of Object.entries(data.deleted)) if (now - t > KEEP_DELETED) delete data.deleted[k];
+      for (const [k, t] of Object.entries(od)) {
+        if (now - t > KEEP_DELETED) continue;
+        if (!(data.deleted[k] >= t)) { data.deleted[k] = t; weChanged = true; }
+      }
+      for (const [k, t] of Object.entries(data.deleted)) if (!(od[k] >= t)) theyNeed = true;
+      for (const c of COLLS) {
+        const mine = data[c], theirs = other[c] || {};
+        for (const id of new Set([...Object.keys(mine), ...Object.keys(theirs)])) {
+          const m = mine[id], o = theirs[id];
+          const same = !!m && !!o && JSON.stringify(m) === JSON.stringify(o);
+          let win;
+          if (same || !o) win = m;
+          else if (!m) win = o;
+          else { const mt = m._t || 0, ot = o._t || 0; win = mt > ot ? m : mt < ot ? o : otherNewer ? o : m; }
+          const gone = data.deleted[c + "/" + id];
+          if (win && gone && gone >= (win._t || 0)) win = null;
+          if (win !== m) { if (win) mine[id] = win; else delete mine[id]; dirty.add(c); weChanged = true; }
+          if (!(win === o || (same && win === m))) theyNeed = true;
+        }
+      }
+      data.updatedAt = Math.max(data.updatedAt || 0, other.updatedAt || 0);
+      if (weChanged) { write(); const cs = [...dirty]; dirty = new Set(); cs.forEach(cc => subs[cc].forEach(f => f(snap(cc)))); }
+      return theyNeed;
+    }
+    write();
     return {
       collection: coll,
       dump: () => JSON.stringify({ app: "Noter", savedAt: new Date().toISOString(), ...data }),
-      load: obj => { data = { lists: obj.lists || {}, items: obj.items || {} }; persist(); emit("lists"); emit("items"); },
-      applyRemote: obj => { data = { lists: obj.lists || {}, items: obj.items || {}, updatedAt: obj.updatedAt || 0 }; persist(false); emit("lists"); emit("items"); },
-      updatedAt: () => data.updatedAt || 0,
+      // Restoring a backup replaces everything: its items count as just edited, and anything not in it is deleted.
+      load: obj => {
+        const now = Date.now();
+        for (const c of COLLS) {
+          for (const id of Object.keys(data[c])) if (!(obj[c] || {})[id]) data.deleted[c + "/" + id] = now;
+          data[c] = {};
+          for (const [id, d] of Object.entries(obj[c] || {})) { data[c][id] = { ...d, _t: now }; delete data.deleted[c + "/" + id]; }
+          changed(c);
+        }
+      },
+      merge,
       onChange: fn => { onChange = fn; },
     };
   }
@@ -277,17 +330,33 @@ li.dragging { position: relative; z-index: 1; }
   let suppressClick = false;
 
   const ord = it => typeof it.order === "number" ? it.order : (it.createdAt || 0);
-  const sorted = arr => arr.slice().sort((a, b) => ord(a) - ord(b));
+  // Ties (two phones adding at once) fall back to creation time so every device shows the same order.
+  const sorted = arr => arr.slice().sort((a, b) => ord(a) - ord(b) || (a.createdAt || 0) - (b.createdAt || 0) || (a.id < b.id ? -1 : 1));
   const current = () => lists.find(l => l.id === view) || null;
-  // Steps from before lists existed (or whose list is gone) belong to the first list.
-  const listOf = i => lists.some(l => l.id === i.listId) ? i.listId : (sorted(lists)[0] || {}).id;
-  const inList = lid => items.filter(i => listOf(i) === lid);
-  // A step whose parent is gone shows at the top level instead of vanishing.
-  const isTop = i => !i.parentId || !items.some(p => p.id === i.parentId);
-  const kids = pid => sorted(items.filter(i => pid === null ? isTop(i) && listOf(i) === view : i.parentId === pid));
+  // Lookups rebuilt once whenever the data changes, so drawing the page doesn't rescan every step for every step.
+  let byList = new Map(), byParent = new Map();
+  function reindex() {
+    const listIds = new Set(lists.map(l => l.id)), itemIds = new Set(items.map(i => i.id));
+    const first = (sorted(lists)[0] || {}).id;
+    byList = new Map(); byParent = new Map();
+    const push = (m, k, v) => { const a = m.get(k); a ? a.push(v) : m.set(k, [v]); };
+    for (const i of items) {
+      // Steps from before lists existed (or whose list is gone) belong to the first list.
+      const lid = listIds.has(i.listId) ? i.listId : first;
+      push(byList, lid, i);
+      // A step whose parent is gone shows at the top level instead of vanishing.
+      push(byParent, i.parentId && itemIds.has(i.parentId) ? i.parentId : "top:" + lid, i);
+    }
+    for (const [k, a] of byParent) byParent.set(k, sorted(a));
+  }
+  const inList = lid => byList.get(lid) || [];
+  const kids = pid => byParent.get(pid === null ? "top:" + view : pid) || [];
   const below = id => kids(id).flatMap(k => [k, ...below(k.id)]);
   const loaded = () => gotItems && gotLists;
   const stats = lid => { const m = inList(lid); const d = m.filter(i => i.done).length; return { total: m.length, done: d, pct: m.length ? d / m.length * 100 : 0 }; };
+  // Several changes in a row (deleting a list and its steps) redraw the page once.
+  let queued = 0;
+  const queueRender = () => { if (!queued) queued = requestAnimationFrame(() => { queued = 0; render(); }); };
 
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const btn = (label, cls, fn, type) => { const b = el("button", "btn small " + (cls || ""), label); b.type = type || "button"; if (fn) b.onclick = fn; return b; };
@@ -624,8 +693,8 @@ li.dragging { position: relative; z-index: 1; }
     const ids = [...ol.children].map(c => c.dataset.id).filter(Boolean);
     const changes = [];
     ids.forEach((id, i) => { const it = items.find(x => x.id === id); if (it && it.order !== i + 1) { it.order = i + 1; changes.push([id, i + 1]); } });
-    render();  // numbers update straight away
-    try { for (const [id, order] of changes) await col.doc(id).update({ order }); setNotice(""); }
+    reindex(); render();  // numbers update straight away
+    try { await Promise.all(changes.map(([id, order]) => col.doc(id).update({ order }))); setNotice(""); }
     catch (err) { setNotice("Couldn't save the new order. Try again."); }
   }
 
@@ -674,7 +743,7 @@ li.dragging { position: relative; z-index: 1; }
   }
   async function remove(id) {
     const ids = [...below(id).map(d => d.id).reverse(), id];
-    try { for (const x of ids) await col.doc(x).delete(); setNotice(""); }
+    try { await Promise.all(ids.map(x => col.doc(x).delete())); setNotice(""); }
     catch (e) { setNotice("Couldn't delete everything. Try again."); }
   }
   async function createList(name, color, open) {
@@ -693,7 +762,7 @@ li.dragging { position: relative; z-index: 1; }
   async function removeList(id) {
     const steps = inList(id).map(i => i.id);
     go("all");
-    try { for (const x of steps) await col.doc(x).delete(); await listCol.doc(id).delete(); setNotice(""); }
+    try { await Promise.all(steps.map(x => col.doc(x).delete())); await listCol.doc(id).delete(); setNotice(""); }
     catch (e) { setNotice("Couldn't delete the whole list. Try again."); }
   }
 
@@ -752,29 +821,24 @@ li.dragging { position: relative; z-index: 1; }
       const fail = e => status(e.status === 401 || e.status === 403
         ? "GitHub didn't accept your key. Tap Disconnect and paste a new one."
         : "Couldn't reach GitHub. Your changes are safe on this device and will sync next time.");
+      // Read the cloud copy, merge it in, and upload only if this device has something new.
+      // Every save goes through here, so an offline phone can't wipe out what another device saved meanwhile.
+      let again = false;
       async function syncNow() {
-        if (!cfg.token || busy) return;
-        busy = true; status("Syncing…");
+        if (!cfg.token) return;
+        if (busy) { again = true; return; }
+        busy = true; clearTimeout(timer); status("Syncing…");
         try {
           const g = await findGist();
-          if (!g) await push();
-          else {
-            const remote = await readGist(g);
-            const r = remote.updatedAt || 0, l = db.updatedAt();
-            if (r > l) db.applyRemote(remote); else if (r < l) await push();
-          }
+          if (!g || db.merge(await readGist(g))) await push();
           ok();
         } catch (e) { fail(e); }
-        finally { busy = false; }
+        finally { busy = false; if (again) { again = false; syncNow(); } }
       }
       function schedule() {
         if (!cfg.token) return;
         clearTimeout(timer); status("Saving…");
-        timer = setTimeout(async () => {
-          if (busy) { schedule(); return; }
-          busy = true;
-          try { await push(); ok(); } catch (e) { fail(e); } finally { busy = false; }
-        }, 1200);
+        timer = setTimeout(syncNow, 1200);
       }
       $("syncConnect").onclick = async () => {
         const k = $("syncKey").value.trim();
@@ -789,6 +853,8 @@ li.dragging { position: relative; z-index: 1; }
       return { schedule, syncNow };
     })();
     db.onChange(sync.schedule);
+    window.addEventListener("online", sync.syncNow);
+    if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) navigator.serviceWorker.register("sw.js").catch(() => {});
     sync.syncNow();
     $("restoreFile").onchange = async e => {
       const f = e.target.files[0]; if (!f) return;
@@ -809,13 +875,13 @@ li.dragging { position: relative; z-index: 1; }
       gotLists = true;
       // Everyone starts with one list.
       if (!lists.length && !madeDefault) { madeDefault = true; createList("My steps", "green", false); }
-      render();
+      reindex(); queueRender();
     }, fail);
     col.onSnapshot(snap => {
       items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       if (openId && !items.some(i => i.id === openId)) openId = null;
       gotItems = true;
-      render();
+      reindex(); queueRender();
     }, fail);
     render();
   })();
