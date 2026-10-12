@@ -39,8 +39,8 @@ body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-
 .side { position: sticky; top: calc(24px + env(safe-area-inset-top, 0px)); display: grid; gap: 4px; }
 .brand { font-weight: 700; font-size: 1.6rem; letter-spacing: -0.03em; margin: 0 0 12px 10px; }
 .nav { display: grid; gap: 2px; }
-.nav button { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; font: 500 .95rem var(--sans); color: var(--muted); background: none; border: 0; border-radius: 9px; padding: 8px 10px; cursor: pointer; }
-.nav button:hover { background: var(--hover); color: var(--ink); }
+.nav button:not(.swipe-del) { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; font: 500 .95rem var(--sans); color: var(--muted); background: none; border: 0; border-radius: 9px; padding: 8px 10px; cursor: pointer; }
+.nav button:not(.swipe-del):hover { background: var(--hover); color: var(--ink); }
 .nav button[aria-current="page"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: inset 0 0 0 1px var(--line); }
 .nav .label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nav .count { font-size: .8rem; font-variant-numeric: tabular-nums; }
@@ -106,7 +106,14 @@ li.dragging { position: relative; z-index: 1; }
 .swipe:not(.show) .swipe-del { visibility: hidden; }
 .row { position: relative; display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 2px; border-radius: 10px; background: var(--surface); touch-action: pan-y; }
 @media (prefers-reduced-motion: no-preference) { .row { transition: transform .2s ease; } }
-.row.swiped { transform: translateX(-88px); border-radius: 10px 0 0 10px; }
+.swipeable { position: relative; touch-action: pan-y; }
+@media (prefers-reduced-motion: no-preference) { .swipeable { transition: transform .2s ease; } }
+.swiped { transform: translateX(-88px); }
+.row.swiped { border-radius: 10px 0 0 10px; }
+.nav .swipe { border-radius: 9px; }
+.nav .swipe > .swipeable { background: var(--bg); }
+.nav .swipe > .swipeable[aria-current="page"] { background: var(--surface); }
+.cards .swipe { border-radius: 12px; display: grid; }
 .row.open { background: var(--hover); }
 .grip { flex: none; width: 22px; height: 30px; display: grid; place-items: center; border: 0; background: none; color: var(--muted); cursor: grab; padding: 0; border-radius: 6px; touch-action: none; }
 .grip:active { cursor: grabbing; }
@@ -265,7 +272,7 @@ li.dragging { position: relative; z-index: 1; }
   let panel = null;        // null | "new" | "edit" | "delete"
   let newColour = "blue";
   let drag = null;
-  let swipedId = null;     // step whose Delete button is showing
+  let swipedId = null;     // step id or "list:<id>" whose Delete button is showing
   let suppressClick = false;
 
   const ord = it => typeof it.order === "number" ? it.order : (it.createdAt || 0);
@@ -315,7 +322,7 @@ li.dragging { position: relative; z-index: 1; }
   function navBtn(content, active, fn, cls) {
     const b = el("button", cls || ""); b.type = "button"; b.append(...content);
     if (active) b.setAttribute("aria-current", "page");
-    b.onclick = fn; return b;
+    b.onclick = () => { if (!suppressClick) fn(); }; return b;
   }
 
   function renderNav() {
@@ -327,7 +334,7 @@ li.dragging { position: relative; z-index: 1; }
       const s = stats(l.id);
       const b = navBtn([el("span", "dot"), el("span", "label", l.name), el("span", "count", s.total ? `${s.done}/${s.total}` : "")], view === l.id, () => go(l.id));
       b.dataset.c = colourOf(l);
-      nav.append(b);
+      nav.append(swipeWrap(b, "list:" + l.id, "Delete list " + l.name, () => removeList(l.id)));
     }
     const add = navBtn([el("span", null, "+ New list")], false, () => { go("all"); showPanel("new"); }, "add");
     add.disabled = !listCol;
@@ -347,8 +354,8 @@ li.dragging { position: relative; z-index: 1; }
       const s = stats(l.id);
       const c = el("button", "card"); c.type = "button"; c.dataset.c = colourOf(l);
       c.append(el("b", null, l.name), el("small", null, !s.total ? "No steps yet" : s.done === s.total ? "All done" : `${s.done} of ${s.total}`), bar(s.pct));
-      c.onclick = () => go(l.id);
-      cards.append(c);
+      c.onclick = () => { if (!suppressClick) go(l.id); };
+      cards.append(swipeWrap(c, "list:" + l.id, "Delete list " + l.name, () => removeList(l.id)));
     }
     const n = el("button", "card new", "+ New list"); n.type = "button"; n.disabled = !listCol;
     n.onclick = () => showPanel("new");
@@ -416,7 +423,7 @@ li.dragging { position: relative; z-index: 1; }
     f.append(inp, addBtn);
     f.onsubmit = e => { e.preventDefault(); const t = inp.value.trim(); if (!t) { inp.focus(); return; } inp.value = ""; create(t, null); };
     v.append(f);
-    v.append(el("p", "hint", "Tick the box when a step is done. Drag the dots to reorder. Swipe left to delete. Tap a step's name to add smaller steps under it, rename it or delete it."));
+    v.append(el("p", "hint", "Tick the box when a step is done. Drag the dots to reorder. Swipe left to delete a step or a list. Tap a step's name to add smaller steps under it, rename it or delete it."));
 
     const ol = el("ol", "steps");
     const top = kids(null);
@@ -459,16 +466,7 @@ li.dragging { position: relative; z-index: 1; }
     name.onclick = () => { if (suppressClick) return; openId === it.id ? show(null) : show(it.id); };
 
     row.append(grip, check, name);
-    if (swipedId === it.id) row.classList.add("swiped");
-    const swipe = el("div", "swipe");
-    const del = el("button", "swipe-del", "Delete"); del.type = "button";
-    del.setAttribute("aria-label", "Delete " + it.title);
-    del.tabIndex = swipedId === it.id ? 0 : -1;
-    del.onclick = () => { swipedId = null; if (openId === it.id) openId = null; remove(it.id); };
-    if (swipedId === it.id) swipe.classList.add("show");
-    swipe.append(del, row);
-    row.addEventListener("pointerdown", e => startSwipe(e, row, it.id));
-    li.append(swipe);
+    li.append(swipeWrap(row, it.id, "Delete " + it.title, () => { if (openId === it.id) openId = null; remove(it.id); }));
     if (openId === it.id) li.append(options(it));
 
     const children = kids(it.id);
@@ -480,7 +478,21 @@ li.dragging { position: relative; z-index: 1; }
     return li;
   }
 
-  // Swipe a step left to show its Delete button (touch only; on a computer use Delete in the step's options).
+  // Wrap a step, menu entry or card so swiping it left shows a Delete button behind it.
+  function swipeWrap(target, key, label, onDelete) {
+    const wrap = el("div", "swipe"); wrap.dataset.key = key;
+    const del = el("button", "swipe-del", "Delete"); del.type = "button";
+    del.setAttribute("aria-label", label);
+    del.tabIndex = swipedId === key ? 0 : -1;
+    del.onclick = () => { swipedId = null; onDelete(); };
+    target.classList.add("swipeable");
+    if (swipedId === key) { wrap.classList.add("show"); target.classList.add("swiped"); }
+    target.addEventListener("pointerdown", e => startSwipe(e, target, key));
+    wrap.append(del, target);
+    return wrap;
+  }
+
+  // Swipe left to show a Delete button (touch only; on a computer use Delete in the options).
   function startSwipe(e, row, id) {
     if (e.pointerType === "mouse" || drag || e.target.closest(".grip, .check")) return;
     const x0 = e.clientX, y0 = e.clientY, base = swipedId === id ? -88 : 0;
@@ -514,9 +526,9 @@ li.dragging { position: relative; z-index: 1; }
   }
   // A tap anywhere else closes an open Delete button.
   document.addEventListener("pointerdown", e => {
-    if (!swipedId || e.target.closest(".swipe-del") || e.target.closest(`li[data-id="${swipedId}"] > .swipe`)) return;
+    if (!swipedId || e.target.closest(".swipe-del") || e.target.closest(`.swipe[data-key="${CSS.escape(swipedId)}"]`)) return;
     swipedId = null;
-    document.querySelectorAll(".row.swiped").forEach(r => { r.classList.remove("swiped"); setTimeout(() => r.parentElement && r.parentElement.classList.remove("show"), 220); });
+    document.querySelectorAll(".swiped").forEach(r => { r.classList.remove("swiped"); setTimeout(() => r.parentElement && r.parentElement.classList.remove("show"), 220); });
   }, true);
 
   // Drag a step up or down among the steps at its own level.
