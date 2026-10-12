@@ -1,6 +1,6 @@
 # Noter
 
-Lists of numbered steps you tick off as you go. Each list has its own colour and progress bar, steps can have smaller steps under them, and you drag the dots to reorder.
+Lists of numbered steps you tick off as you go. Each list has its own colour and progress bar, steps can have smaller steps under them, you drag the dots to reorder, and you swipe left to delete.
 
 Everything is in `index.html`. Your lists are saved in the browser on the device you use, so nothing is sent anywhere. Use **Back up** and **Restore** in the side menu to keep a copy.
 
